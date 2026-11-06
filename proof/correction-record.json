@@ -1,0 +1,36 @@
+{
+  "schema": "table-memory/corrections/v2",
+  "created_at": "2026-10-30T09:00:00Z",
+  "updated_at": "2026-10-30T09:00:00Z",
+  "corrections": [
+    {
+      "id": "mama-jollof-red-pepper-quantity",
+      "source": {
+        "path": "fixtures/jollof-mama.png",
+        "sha256": "29d742b22de05b9335b31089e109903d67f5a4c34baf6ca1817c036126642c68",
+        "page_or_region": "jollof-mama.png, red-pepper line"
+      },
+      "recipe": {
+        "title": "Jollof Rice",
+        "branch": "Mama"
+      },
+      "locator": {
+        "kind": "ingredient",
+        "index": 4,
+        "label": "red pepper",
+        "original_text": "red pepper: line is present but blurred; no quantity readable"
+      },
+      "field": "quantity",
+      "correction": {
+        "approved_text": "One cup, blended.",
+        "attribution": "Synthetic family respondent (fixture)",
+        "status": "approved",
+        "approved_at": "2026-10-30T09:00:00Z"
+      },
+      "scope": {
+        "applies_to": "this source, branch, ingredient and field only",
+        "notes": "Reused only while the source fingerprint and locator still match."
+      }
+    }
+  ]
+}

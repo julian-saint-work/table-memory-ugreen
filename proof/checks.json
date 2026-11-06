@@ -1,0 +1,12 @@
+{
+  "schema": "table-memory/local-rehearsal-checks/v1",
+  "controller": "controller.cjs",
+  "branches_preserved": true,
+  "blurred_pepper_flagged": true,
+  "attributed_not_source": true,
+  "source_hashes_present": true,
+  "scaling_uses_stated_yield": true,
+  "no_merged_jollof": true,
+  "nas_execution": false,
+  "note": "Local controller rehearsal only; no UGOS/NAS execution."
+}

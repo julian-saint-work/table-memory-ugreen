@@ -1,0 +1,47 @@
+{
+  "schema": "table-memory/session-2-checks/v1",
+  "executed_by": "session2.cjs",
+  "record_path": "run/correction-record.json",
+  "correction_id": "mama-jollof-red-pepper-quantity",
+  "record_source": "fixtures/jollof-mama.png",
+  "checked_source": "fixtures/jollof-mama.png",
+  "stored_sha256": "29d742b22de05b9335b31089e109903d67f5a4c34baf6ca1817c036126642c68",
+  "current_sha256": "29d742b22de05b9335b31089e109903d67f5a4c34baf6ca1817c036126642c68",
+  "corrections_checked": 1,
+  "reused": true,
+  "expected_reject": false,
+  "decisions": [
+    {
+      "id": "mama-jollof-red-pepper-quantity",
+      "checkedSource": "fixtures/jollof-mama.png",
+      "storedSha256": "29d742b22de05b9335b31089e109903d67f5a4c34baf6ca1817c036126642c68",
+      "currentSha256": "29d742b22de05b9335b31089e109903d67f5a4c34baf6ca1817c036126642c68",
+      "approvedText": "One cup, blended.",
+      "sourceMatch": true,
+      "branchIsMama": true,
+      "locatorKind": "ingredient",
+      "locatorIndex": 4,
+      "locatorLabel": "red pepper",
+      "locatorMatch": true,
+      "fieldIsQuantity": true,
+      "fieldUnresolved": true,
+      "notLeakedToAunty": true,
+      "approved": true
+    }
+  ],
+  "checks": {
+    "record_loaded": true,
+    "corrections_supported": true,
+    "corrections_checked": true,
+    "correction_approved": true,
+    "source_hash_matches": true,
+    "branch_is_mama": true,
+    "locator_kind_is_ingredient": true,
+    "locator_index_is_red_pepper": true,
+    "field_is_quantity": true,
+    "field_still_unresolved": true,
+    "correction_not_leaked_to_aunty": true
+  },
+  "nas_execution": false,
+  "note": "Local second-session script only; no UGOS or NAS execution."
+}

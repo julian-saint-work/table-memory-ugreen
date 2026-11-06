@@ -1,0 +1,30 @@
+{
+  "schema": "table-memory/readback/v1",
+  "method": "read exact saved files from disk and compare byte count and SHA-256 with approved-output.json",
+  "files": [
+    {
+      "path": "run/cookbook.md",
+      "approved_bytes": 3849,
+      "readback_bytes": 3849,
+      "approved_sha256": "9e4c445b03ea9c1144518db19695dde23ba788bf576fe660934cbf32ef07fa35",
+      "readback_sha256": "9e4c445b03ea9c1144518db19695dde23ba788bf576fe660934cbf32ef07fa35",
+      "match": true
+    },
+    {
+      "path": "run/correction-record.json",
+      "approved_bytes": 1135,
+      "readback_bytes": 1135,
+      "approved_sha256": "2bc26414a60dcc72c303515267bc4407e7b6f091d0a104609ed1bf7a6568967b",
+      "readback_sha256": "2bc26414a60dcc72c303515267bc4407e7b6f091d0a104609ed1bf7a6568967b",
+      "match": true
+    }
+  ],
+  "matches": true,
+  "session2_artifact": {
+    "path": "run/session-2.md",
+    "bytes": 1701,
+    "sha256": "eaab623f2dc4f3a146b3aeb81b9f32a0012f6bc60e94b26e8e9cbc1be9395569"
+  },
+  "nas_execution": false,
+  "note": "Local filesystem read-back only; no UGOS or NAS save/read-back executed."
+}

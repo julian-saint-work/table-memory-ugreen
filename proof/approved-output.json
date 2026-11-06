@@ -1,0 +1,16 @@
+{
+  "schema": "table-memory/approved-output/v1",
+  "saved_at": "2026-10-30T09:00:00Z",
+  "files": [
+    {
+      "path": "run/cookbook.md",
+      "bytes": 3849,
+      "sha256": "9e4c445b03ea9c1144518db19695dde23ba788bf576fe660934cbf32ef07fa35"
+    },
+    {
+      "path": "run/correction-record.json",
+      "bytes": 1135,
+      "sha256": "2bc26414a60dcc72c303515267bc4407e7b6f091d0a104609ed1bf7a6568967b"
+    }
+  ]
+}

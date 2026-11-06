@@ -1,0 +1,14 @@
+{
+  "schema": "table-memory/changed-source-check/v1",
+  "executed_by": "changed-source-check.cjs",
+  "original_source": "fixtures/jollof-mama.png",
+  "changed_source": "run/changed-source.png",
+  "stored_sha256": "29d742b22de05b9335b31089e109903d67f5a4c34baf6ca1817c036126642c68",
+  "changed_sha256": "74490d970d73a1a4c9c57d75adc7186e706355ac10028efb23532de1a58db065",
+  "fingerprint_changed": true,
+  "reused": false,
+  "expected_reject": true,
+  "correction_not_leaked_to_aunty": true,
+  "nas_execution": false,
+  "note": "Local changed-source test only; no UGOS or NAS execution."
+}
