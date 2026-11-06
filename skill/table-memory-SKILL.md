@@ -32,29 +32,35 @@ Start with one selected dish and no more than 12 regular files. Ask before addin
 
 # Workflow
 
-1. If the user supplied a correction record, read it before any extraction. Delegate exactly this to `file-agent`:
+Before every delegation, populate the instruction with the actual authorized paths, the complete approved text and the verified results from earlier steps. The templates below show the required wording; replace each reference to a path, file list or approved content with the concrete value. Never assume the receiving expert can see this conversation or can open a reference file. For saving, include each complete approved text and the correction JSON mapped to its exact destination. For read-back, include the actual paths returned by the save.
+1. If the user supplied a correction record, read it before any extraction. Use the following instruction template, populated with the actual values, for `file-agent`:
 
-`delegate --target file-agent --instruction 'Read only the exact correction-record path the user supplied in this session. Return its content, byte count and SHA-256. Do not write, move, rename or delete anything. If the path is missing, unreadable or not valid JSON, stop and report the real error.'`
+
+`delegate --target file-agent --instruction 'Read only the correction-record path populated in this instruction. Return its content, byte count and SHA-256. Do not write, move, rename or delete anything. If the path is missing, unreadable or not valid JSON, stop and report the real error.'`
 
 Parse the record. If it is unreadable, stop; do not silently start a clean first run. Keep its source fingerprints and approved corrections available for step 5.
 
-2. Inventory the selected folder. Delegate exactly this to `file-agent`, using the exact path the user supplied:
+2. Inventory the selected folder. Use the following instruction template, populated with the actual values, for `file-agent`:
 
-`delegate --target file-agent --instruction 'Use exactly the folder path the user supplied in this session; do not substitute a parent, sibling or NAS root. List at most 12 regular files in total across the selected folder and any exact subfolders the user named; do not recurse beyond those paths. For each file return the real path, display name, file type, size, modification time and SHA-256 fingerprint. Read file bytes only as needed to compute SHA-256; do not interpret contents. Do not move, rename, delete, tag or write anything. Return an empty list when no regular files exist and report unreadable entries separately.'`
+
+`delegate --target file-agent --instruction 'Use exactly the folder path populated in this instruction; do not substitute a parent, sibling or NAS root. List at most 12 regular files in total across the selected folder and any exact subfolders the user named; do not recurse beyond those paths. For each file return the real path, display name, file type, size, modification time and SHA-256 fingerprint. Read file bytes only as needed to compute SHA-256; do not interpret contents. Do not move, rename, delete, tag or write anything. Return an empty list when no regular files exist and report unreadable entries separately.'`
 
 Use only the real file list returned by this step. If it is empty, stop and report that no recipe files were found. Do not add files merely because they exist nearby.
 
-3. Read the selected PDF documents. Delegate only the exact PDF paths from the real file list to `document-agent`:
+3. Read the selected PDF documents. Use the following instruction template, populated with the actual values, for `document-agent`:
 
-`delegate --target document-agent --instruction 'Read only the exact PDF paths returned in the real file list in this session. For each PDF extract the recipe title, ingredients with their original quantities and units, steps in order, yield, preparation time, cooking time, oven temperature, source note and page number when the document states them. Preserve the original wording for quantities and units. Mark every absent field as not found and never infer it. Return per-file results and per-page coverage.'`
 
-4. Read the selected image recipes. Delegate only the exact image paths from the real file list to `photo-agent`:
+`delegate --target document-agent --instruction 'Read only the PDF paths populated in this instruction from the verified file list. For each PDF extract the recipe title, ingredients with their original quantities and units, steps in order, yield, preparation time, cooking time, oven temperature, source note and page number when the document states them. Preserve the original wording for quantities and units. Mark every absent field as not found and never infer it. Return per-file results and per-page coverage.'`
 
-`delegate --target photo-agent --instruction 'Use only the exact image paths returned in the real file list in this session. For each image run OCR and a layout description to recover the recipe title, ingredients, quantities, units, steps, yield, times, oven temperature and any handwritten note. Return the exact source path and the original OCR text for every extracted value. Report illegible regions, cropped text and uncertain characters as needs_review instead of guessing. Do not edit or move the image.'`
+4. Read the selected image recipes. Use the following instruction template, populated with the actual values, for `photo-agent`:
 
-5. Attach optional voice notes. Only when the user approved the exact audio files, delegate those exact paths to `knowledge-agent`:
 
-`delegate --target knowledge-agent --instruction 'Transcribe only the exact audio paths the user approved in this session. Return the transcript, speaker segments when the real result supplies them, source path, duration and a stable timestamp reference for each segment. Do not summarise, imitate, synthesize or alter the voice, and do not claim a speaker identity the result does not provide.'`
+`delegate --target photo-agent --instruction 'Use only the image paths populated in this instruction from the verified file list. For each image run OCR and a layout description to recover the recipe title, ingredients, quantities, units, steps, yield, times, oven temperature and any handwritten note. Return the exact source path and the original OCR text for every extracted value. Report illegible regions, cropped text and uncertain characters as needs_review instead of guessing. Do not edit or move the image.'`
+
+5. Attach optional voice notes. Only when the user approved the exact audio files, use the following instruction template, populated with the actual values, for `knowledge-agent`:
+
+
+`delegate --target knowledge-agent --instruction 'Transcribe only the audio paths populated in this instruction from the user-approved selection. Return the transcript, speaker segments when the real result supplies them, source path, duration and a stable timestamp reference for each segment. Do not summarise, imitate, synthesize or alter the voice, and do not claim a speaker identity the result does not provide.'`
 
 6. Reconcile the real results and the prior record. Match by exact source path and fingerprint first, then by clear content. Do not use title alone to decide that two files are the same recipe or a family variant.
 
@@ -72,13 +78,15 @@ Never average, merge or overwrite family versions. Normalise a quantity or unit 
 
 9. If a shopping list was requested, build it now from the approved recipes. Aggregate only identical ingredients with compatible units. Keep separate lines when units cannot be combined exactly. Show the source recipes for every line. If servings are requested, scale only values with a stated numeric quantity and a stated original yield; show the original and scaled amounts side by side. If the yield is missing, leave the recipe unscaled and mark it `needs_review`; do not infer a yield from another recipe.
 
-10. After the user approves the reviewed cookbook, the shopping list when requested, and the correction record, save them with `knowledge-agent`:
+10. After the user approves the reviewed cookbook, the shopping list when requested, and the correction record, save them with `knowledge-agent`. Use the following instruction template, populated with the actual values:
 
-`delegate --target knowledge-agent --instruction 'Save only the user-approved cookbook Markdown, the user-approved shopping list and the user-approved correction record to the exact output paths the user confirmed. The correction record must use the schema in the correction-record reference, contain a list that may be empty or hold several corrections, and include only approved corrections. Return the real verified save status, output file path and content byte count for each file. Do not overwrite an existing file; if a target exists, stop and report it so the user can choose another name. Do not save any file the user did not approve.'`
 
-11. Read back every successful save before calling it complete. Delegate read-only verification to `file-agent`:
+`delegate --target knowledge-agent --instruction 'Save only the complete user-approved cookbook Markdown, shopping list and correction record whose text and exact destinations are populated in this instruction. The correction record must use the schema in the correction-record reference, contain a list that may be empty or hold several corrections, and include only approved corrections. Return the real verified save status, output file path and content byte count for each file. Do not overwrite an existing file; if a target exists, stop and report it so the user can choose another name. Do not save any file the user did not approve.'`
 
-`delegate --target file-agent --instruction 'Read back the exact saved cookbook path, the exact saved shopping-list path when one was saved, and the exact saved correction-record path. Return the byte count, SHA-256 and full content of each file. Do not write, move or rename anything. If a file is missing or unreadable, report the real error.'`
+11. Read back every successful save before calling it complete. Use the following instruction template, populated with the actual values, for `file-agent`:
+
+
+`delegate --target file-agent --instruction 'Read back the exact saved cookbook path, the saved shopping-list path when one was saved, and the saved correction-record path populated in this instruction. Return the byte count, SHA-256 and full content of each file. Do not write, move or rename anything. If a file is missing or unreadable, report the real error.'`
 
 Compare the read-back content with the exact approved text. A matching path or byte count alone is not enough. If any content differs, report the save as failed for that file and do not claim completion. If read-back is unavailable or inconclusive, report the save as unverified rather than complete.
 
