@@ -7,11 +7,11 @@ This repository mirrors the final Markdown Skill and the local proof for inspect
 - `Table-Memory-Proposal-Final7.pdf` — one-page proposal, 485 words.
 
 Hashes:
-- `Table-Memory-v8.zip`: `eed0ed257db7e7eb16e8468e5e15a59fc991c0ed5eb703fdf641c917e46d76ad`
-- `Table-Memory-Local-Proof-v10.zip`: `68cc3ed2be84940ad15f2c858476769b86ded5642db85fd6911d39267fb36d84`
+- `Table-Memory-v9.zip`: `dee256c1e3f75097d7efb927a0a6666d90961daa6d496d22cb90bfacfa6e6531`
+- `Table-Memory-Local-Proof-v11.zip`: `2b857f6da1fb6b2957c2933c0dc63ae6b8e156ee8ed5073bcd3d681f260f0f24`
 - `Table-Memory-Proposal-Final7.pdf`: `88a3ea5f840f046ec67f22d26c1f7bf504a330726448b9029766e0d27a27b243`
 
 Direct downloads:
-- https://raw.githubusercontent.com/julian-saint-work/table-memory-ugreen/main/dist/Table-Memory-v8.zip
-- https://raw.githubusercontent.com/julian-saint-work/table-memory-ugreen/main/dist/Table-Memory-Local-Proof-v10.zip
+- https://raw.githubusercontent.com/julian-saint-work/table-memory-ugreen/main/dist/Table-Memory-v9.zip
+- https://raw.githubusercontent.com/julian-saint-work/table-memory-ugreen/main/dist/Table-Memory-Local-Proof-v11.zip
 - https://raw.githubusercontent.com/julian-saint-work/table-memory-ugreen/main/dist/Table-Memory-Proposal-Final7.pdf
