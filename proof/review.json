@@ -1,0 +1,53 @@
+{
+  "schema": "table-memory/review/v1",
+  "recipes": [
+    {
+      "title": "Jollof Rice",
+      "branch": "Mama",
+      "source": "fixtures/jollof-mama.png",
+      "fields": [
+        {
+          "locator": {
+            "kind": "ingredient",
+            "index": 4,
+            "label": "red pepper"
+          },
+          "field": "quantity",
+          "status": "needs_review"
+        }
+      ]
+    },
+    {
+      "title": "Jollof Rice",
+      "branch": "Aunty",
+      "source": "fixtures/jollof-aunty.png",
+      "fields": [
+        {
+          "locator": {
+            "kind": "ingredient",
+            "index": 4,
+            "label": "red pepper"
+          },
+          "field": "quantity",
+          "status": "stated"
+        }
+      ]
+    },
+    {
+      "title": "Coconut Rice",
+      "branch": "Coconut Rice",
+      "source": "fixtures/coconut-rice.pdf",
+      "fields": [
+        {
+          "locator": {
+            "kind": "field",
+            "index": 1,
+            "label": "yield"
+          },
+          "field": "yield",
+          "status": "stated"
+        }
+      ]
+    }
+  ]
+}

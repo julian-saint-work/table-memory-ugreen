@@ -1,6 +1,7 @@
 {
   "schema": "table-memory/approved-output/v1",
   "saved_at": "2026-10-30T09:00:00Z",
+  "basis": "hashes computed from the approved in-memory text before the files were written",
   "files": [
     {
       "path": "run/cookbook.md",

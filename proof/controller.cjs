@@ -12,6 +12,7 @@ const crypto = require('node:crypto');
 const root = __dirname;
 const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
 const sha = (p) => crypto.createHash('sha256').update(fs.readFileSync(path.join(root, p))).digest('hex');
+const shaText = (text) => crypto.createHash('sha256').update(Buffer.from(text, 'utf8')).digest('hex');
 const write = (p, s) => fs.writeFileSync(path.join(root, p), s);
 
 const files = {
@@ -46,6 +47,7 @@ if (!transcript) throw new Error('Transcript is empty');
 const originalYield = Number(yieldMatch[1]);
 const targetYield = 6;
 const factor = targetYield / originalYield;
+const fmt = (n) => Number.isInteger(n) ? String(n) : String(Number(n.toFixed(2)));
 
 const review = `# Table Memory — review table (local rehearsal)
 
@@ -132,12 +134,12 @@ The PDF states ${originalYield} servings, so exact scaling is ${targetYield}/${o
 
 | Ingredient | Original (${originalYield}) | Scaled (${targetYield}) |
 |---|---:|---:|
-| long grain rice | 2 cups | 3 cups |
-| coconut milk | 1 cup | 1.5 cups |
-| stock | 1 cup | 1.5 cups |
-| small onion | 1 | 1.5 small onions (buy 2) |
-| salt | 1 tsp | 1.5 tsp |
-| oil | 1 tbsp | 1.5 tbsp |
+| long grain rice | 2 cups | ${fmt(2 * factor)} cups |
+| coconut milk | 1 cup | ${fmt(1 * factor)} cups |
+| stock | 1 cup | ${fmt(1 * factor)} cups |
+| small onion | 1 | ${fmt(1 * factor)} small onions (buy ${Math.ceil(1 * factor)}) |
+| salt | 1 tsp | ${fmt(1 * factor)} tsp |
+| oil | 1 tbsp | ${fmt(1 * factor)} tbsp |
 
 The jollof branches are not included in the scaled list because neither card states a yield. The cook chooses a branch first.
 
@@ -160,7 +162,38 @@ The jollof branches are not included in the scaled list because neither card sta
 `;
 
 write('run/review.md', review);
-write('run/cookbook.md', cookbook);
+
+const reviewData = {
+  schema: 'table-memory/review/v1',
+  recipes: [
+    {
+      title: 'Jollof Rice',
+      branch: 'Mama',
+      source: files.mama,
+      fields: [
+        { locator: { kind: 'ingredient', index: 4, label: 'red pepper' }, field: 'quantity', status: 'needs_review' },
+      ],
+    },
+    {
+      title: 'Jollof Rice',
+      branch: 'Aunty',
+      source: files.aunty,
+      fields: [
+        { locator: { kind: 'ingredient', index: 4, label: 'red pepper' }, field: 'quantity', status: 'stated' },
+      ],
+    },
+    {
+      title: 'Coconut Rice',
+      branch: 'Coconut Rice',
+      source: files.pdf,
+      fields: [
+        { locator: { kind: 'field', index: 1, label: 'yield' }, field: 'yield', status: 'stated' },
+      ],
+    },
+  ],
+};
+write('run/review.json', JSON.stringify(reviewData, null, 2) + '\n');
+
 
 const approvedAnswer = 'One cup, blended.';
 if (!answer.startsWith(approvedAnswer)) throw new Error('Approved answer fixture changed');
@@ -201,17 +234,24 @@ const correctionRecord = {
     },
   ],
 };
-write('run/correction-record.json', JSON.stringify(correctionRecord, null, 2) + '\n');
-
+const cookbookText = cookbook;
+const correctionText = JSON.stringify(correctionRecord, null, 2) + '\n';
+const expectedFiles = [
+  { path: 'run/cookbook.md', text: cookbookText },
+  { path: 'run/correction-record.json', text: correctionText },
+];
 const approvedOutput = {
   schema: 'table-memory/approved-output/v1',
   saved_at: approvedAt,
-  files: ['run/cookbook.md', 'run/correction-record.json'].map((p) => ({
+  basis: 'hashes computed from the approved in-memory text before the files were written',
+  files: expectedFiles.map(({ path: p, text }) => ({
     path: p,
-    bytes: fs.statSync(path.join(root, p)).size,
-    sha256: sha(p),
+    bytes: Buffer.byteLength(text, 'utf8'),
+    sha256: shaText(text),
   })),
 };
+write('run/cookbook.md', cookbookText);
+write('run/correction-record.json', correctionText);
 write('run/approved-output.json', JSON.stringify(approvedOutput, null, 2) + '\n');
 
 
@@ -244,7 +284,7 @@ const checks = {
   blurred_pepper_flagged: cookbook.includes('present but blurred') && cookbook.includes('needs review'),
   attributed_not_source: cookbook.includes('Respondent recall') && cookbook.includes('attributed'),
   source_hashes_present: Object.values(hashes).every((h) => cookbook.includes(h)),
-  scaling_uses_stated_yield: cookbook.includes(`The PDF states ${originalYield} servings`) && cookbook.includes('1.5'),
+  scaling_uses_stated_yield: cookbook.includes(`The PDF states ${originalYield} servings`) && [fmt(2 * factor), fmt(1 * factor), fmt(1 * factor), fmt(1 * factor), fmt(1 * factor), fmt(1 * factor)].every((v) => cookbook.includes(`| ${v} `) || cookbook.includes(`| ${v} cups`) || cookbook.includes(`| ${v} tsp`) || cookbook.includes(`| ${v} tbsp`)),
   no_merged_jollof: cookbook.includes('1/2 cup red pepper') && cookbook.includes('1/4 cup groundnut oil'),
   nas_execution: false,
   note: 'Local controller rehearsal only; no UGOS/NAS execution.',
@@ -264,7 +304,7 @@ const trace = {
     'elevenlabs speech-to-text convert --file fixtures/voice-note.mp3 --model-id scribe_v2 > run/voice-transcript.json',
     'node controller.cjs',
   ],
-  outputs: ['run/review.md', 'run/cookbook.md', 'run/correction-record.json', 'run/approved-output.json', 'run/provenance.json', 'run/checks.json'].map((p) => ({ path: p, sha256: sha(p) })),
+  outputs: ['run/review.md', 'run/review.json', 'run/cookbook.md', 'run/correction-record.json', 'run/approved-output.json', 'run/provenance.json', 'run/checks.json'].map((p) => ({ path: p, sha256: sha(p) })),
   limitations: [
     'No UGOS delegate, permission prompt, NAS save or read-back ran.',
     'OCR and PDF extraction are local stand-ins, not UGOS photo/document experts.',

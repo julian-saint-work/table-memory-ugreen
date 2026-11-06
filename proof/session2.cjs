@@ -3,6 +3,7 @@
  * Second local session for the Table Memory proof.
  * It reads the saved correction record from disk and evaluates every correction
  * independently against the current source, branch and precise locator.
+ * It renders only a correction that passed all checks.
  * This is not the UGOS Skill and does not call a NAS.
  *
  * TM_SOURCE_OVERRIDE points at a changed copy for the rejection test.
@@ -20,22 +21,41 @@ const write = (p, s) => fs.writeFileSync(path.join(root, p), s);
 const record = JSON.parse(read('run/correction-record.json'));
 const corrections = Array.isArray(record.corrections) ? record.corrections : [];
 const cookbook = read('run/cookbook.md');
-const review = read('run/review.md');
+const review = JSON.parse(read('run/review.json'));
 const auntyStart = cookbook.indexOf('### Aunty');
 const coconutStart = cookbook.indexOf('## Coconut Rice');
 if (auntyStart === -1 || coconutStart === -1 || coconutStart <= auntyStart) throw new Error('Aunty branch not found');
 const auntyBranch = cookbook.slice(auntyStart, coconutStart);
 const sourceOverride = process.env.TM_SOURCE_OVERRIDE || null;
+
+const fieldStatus = (correction) => {
+  const recipe = (review.recipes || []).find((r) =>
+    r.title === correction.recipe.title &&
+    r.branch === correction.recipe.branch &&
+    r.source === correction.source.path
+  );
+  const field = recipe && (recipe.fields || []).find((f) =>
+    f.locator && f.locator.kind === correction.locator.kind &&
+    f.locator.index === correction.locator.index &&
+    f.locator.label === correction.locator.label &&
+    f.field === correction.field
+  );
+  return field ? field.status : 'not_found';
+};
+
 const decisions = corrections.map((correction) => {
   const checkedSource = sourceOverride || correction.source.path;
   const currentSourceHash = sha(checkedSource);
   const approvedText = correction.correction.approved_text;
+  const status = fieldStatus(correction);
   return {
     id: correction.id,
     checkedSource,
     storedSha256: correction.source.sha256,
     currentSha256: currentSourceHash,
     approvedText,
+    attribution: correction.correction.attribution,
+    approvedAt: correction.correction.approved_at,
     sourceMatch: correction.source.sha256 === currentSourceHash,
     branchIsMama: correction.recipe.branch === 'Mama',
     locatorKind: correction.locator.kind,
@@ -43,36 +63,38 @@ const decisions = corrections.map((correction) => {
     locatorLabel: correction.locator.label,
     locatorMatch: correction.locator.kind === 'ingredient' && correction.locator.index === 4 && correction.locator.label === 'red pepper',
     fieldIsQuantity: correction.field === 'quantity',
-    fieldUnresolved: review.includes('present but blurred') && review.includes('needs_review'),
+    fieldStatus: status,
+    fieldUnresolved: status === 'needs_review',
     notLeakedToAunty: !auntyBranch.includes(approvedText) && auntyBranch.includes('1/2 cup red pepper'),
     approved: correction.correction.status === 'approved',
   };
 });
-const reuse = decisions.filter((d) => d.approved && d.sourceMatch && d.branchIsMama && d.locatorMatch && d.fieldIsQuantity && d.fieldUnresolved);
-const allChecks = (key) => decisions.length > 0 && decisions.every((d) => d[key]);
+
+const eligible = decisions.filter((d) => d.approved && d.sourceMatch && d.branchIsMama && d.locatorMatch && d.fieldIsQuantity && d.fieldUnresolved);
+const selected = eligible[0] || null;
+const revision = decisions.length;
 const checks = {
   record_loaded: record.schema === 'table-memory/corrections/v2' && Array.isArray(record.corrections),
   corrections_supported: Array.isArray(record.corrections),
   corrections_checked: decisions.length === corrections.length,
-  correction_approved: allChecks('approved'),
-  source_hash_matches: allChecks('sourceMatch'),
-  branch_is_mama: allChecks('branchIsMama'),
-  locator_kind_is_ingredient: allChecks('locatorKind'),
-  locator_index_is_red_pepper: allChecks('locatorMatch'),
-  field_is_quantity: allChecks('fieldIsQuantity'),
-  field_still_unresolved: allChecks('fieldUnresolved'),
+  correction_approved: decisions.some((d) => d.approved),
+  source_hash_matches: decisions.some((d) => d.sourceMatch),
+  branch_is_mama: decisions.some((d) => d.branchIsMama),
+  locator_kind_is_ingredient: decisions.some((d) => d.locatorKind === 'ingredient'),
+  locator_index_is_red_pepper: decisions.some((d) => d.locatorMatch),
+  field_is_quantity: decisions.some((d) => d.fieldIsQuantity),
+  field_still_unresolved: selected ? selected.fieldUnresolved : false,
   correction_not_leaked_to_aunty: decisions.length > 0 && decisions.every((d) => d.notLeakedToAunty),
 };
-const reused = reuse.length > 0;
+const reused = Boolean(selected);
 const expectedReject = process.env.TM_EXPECT_REJECT === '1';
 const outputStem = expectedReject ? 'session-2-changed' : 'session-2';
 const decision = expectedReject ? 'reject the changed source' : (reused ? 'reuse approved correction' : 'do not reuse; ask for review');
-const first = decisions[0];
-const sourcePath = first ? first.checkedSource : '(no corrections)';
+const shown = selected || decisions[0] || null;
 
 const session = `# Table Memory — ${expectedReject ? 'changed-source rejection' : 'session 2'} (executed local session)
 
-This file was generated by \`session2.cjs\` after \`controller.cjs\` saved the first-session record. It reads \`run/correction-record.json\` from disk and evaluates every correction against the current source. This is a local rehearsal, not a UGOS or NAS run.
+This file was generated by \`session2.cjs\` after \`controller.cjs\` saved the first-session record. It reads \`run/correction-record.json\` and \`run/review.json\` from disk and evaluates every correction against the current source, branch, locator and field status. This is a local rehearsal, not a UGOS or NAS run.
 
 ## Reopen result
 
@@ -80,21 +102,21 @@ This file was generated by \`session2.cjs\` after \`controller.cjs\` saved the f
 |---|---|
 | Record path | \`run/correction-record.json\` |
 | Record schema | \`${record.schema}\` |
-| Corrections in record | ${corrections.length} |
-| Correction id | \`${first ? first.id : 'none'}\` |
-| Correction status | \`${first ? (first.approved ? 'approved' : 'not approved') : 'n/a'}\` |
-| Stored source | \`${first ? first.checkedSource : 'n/a'}\` |
-| Current source | \`${sourcePath}\` |
-| Stored SHA-256 | \`${first ? first.storedSha256 : 'n/a'}\` |
-| Current SHA-256 | \`${first ? first.currentSha256 : 'n/a'}\` |
-| Source fingerprint matches | **${first && first.sourceMatch ? 'yes' : 'no'}** |
-| Branch | \`${first ? first.branchIsMama ? 'Mama' : 'other' : 'n/a'}\` |
-| Locator | \`${first ? `${first.locatorKind} #${first.locatorIndex} — ${first.locatorLabel}` : 'n/a'}\` |
-| Field | \`${first ? (first.fieldIsQuantity ? 'quantity' : 'other') : 'n/a'}\` |
-| Field still unresolved | **${first && first.fieldUnresolved ? 'yes' : 'no'}** |
+| Corrections in record | ${revision} |
+| Selected correction id | \`${selected ? selected.id : 'none'}\` |
+| Selected status | \`${selected ? 'approved' : 'not eligible'}\` |
+| Stored source | \`${shown ? shown.checkedSource : 'n/a'}\` |
+| Current source | \`${selected ? selected.checkedSource : (shown ? shown.checkedSource : 'n/a')}\` |
+| Stored SHA-256 | \`${shown ? shown.storedSha256 : 'n/a'}\` |
+| Current SHA-256 | \`${selected ? selected.currentSha256 : (shown ? shown.currentSha256 : 'n/a')}\` |
+| Source fingerprint matches | **${selected && selected.sourceMatch ? 'yes' : 'no'}** |
+| Branch | \`${shown ? (shown.branchIsMama ? 'Mama' : 'other') : 'n/a'}\` |
+| Locator | \`${shown ? `${shown.locatorKind} #${shown.locatorIndex} — ${shown.locatorLabel}` : 'n/a'}\` |
+| Field status | \`${shown ? shown.fieldStatus : 'n/a'}\` |
+| Field still unresolved | **${selected && selected.fieldUnresolved ? 'yes' : 'no'}** |
 | Decision | **${decision}** |
 
-${reused && !expectedReject ? `The clarification is shown as \`approved_correction\`, not as a card value:\n\n> **${first.approvedText}** — attributed to ${corrections[0].correction.attribution}; approved ${corrections[0].correction.approved_at}\n\nThe session does not ask the red-pepper question again because the source fingerprint and locator still match.` : 'The correction was not reused because at least one check failed. The item stays needs_review.'}
+${reused && !expectedReject ? `The clarification is shown as \`approved_correction\`, not as a card value:\n\n> **${selected.approvedText}** — attributed to ${selected.attribution}; approved ${selected.approvedAt}\n\nThe session does not ask the red-pepper question again because the selected correction's source fingerprint, locator and field status still match.` : 'No correction was displayed or reused because no entry passed every check. The item stays needs_review.'}
 
 ## Branch boundary
 
@@ -109,11 +131,9 @@ write(`run/${outputStem}-checks.json`, JSON.stringify({
   schema: `table-memory/${outputStem}-checks/v1`,
   executed_by: 'session2.cjs',
   record_path: 'run/correction-record.json',
-  correction_id: first ? first.id : null,
-  record_source: first ? first.checkedSource : null,
-  checked_source: sourcePath,
-  stored_sha256: first ? first.storedSha256 : null,
-  current_sha256: first ? first.currentSha256 : null,
+  review_path: 'run/review.json',
+  selected_id: selected ? selected.id : null,
+  checked_source: selected ? selected.checkedSource : (shown ? shown.checkedSource : null),
   corrections_checked: decisions.length,
   reused,
   expected_reject: expectedReject,
@@ -122,6 +142,6 @@ write(`run/${outputStem}-checks.json`, JSON.stringify({
   nas_execution: false,
   note: 'Local second-session script only; no UGOS or NAS execution.',
 }, null, 2) + '\n');
-console.log(JSON.stringify({ reused, expectedReject, checks }, null, 2));
+console.log(JSON.stringify({ reused, selected_id: selected ? selected.id : null, expectedReject, checks }, null, 2));
 if (expectedReject ? reused : !reused) process.exit(1);
 if (!checks.correction_not_leaked_to_aunty) process.exit(1);
